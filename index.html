@@ -3,130 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MACHINE MADNESS - Ultimate Edition</title>
+    <title>MACHINE MADNESS</title>
     <style>
-        /* ОСНОВНЫЕ СТИЛИ СТРАНИЦЫ 
-        */
-        html, body { 
-            position: fixed; 
-            overflow: hidden; 
-            width: 100%; 
-            height: 100%; 
-            margin: 0; 
-            padding: 0; 
-            background-color: white; 
-            font-family: 'Arial Black', sans-serif; 
-            touch-action: none; 
-            user-select: none; 
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            font-family: 'Arial Black', sans-serif;
+            touch-action: none;
+            user-select: none;
         }
 
         canvas { 
             display: block; 
         }
         
-        /* ИНТЕРФЕЙС ИГРЫ (ОЧКИ) 
-        */
-        #ui { 
-            position: absolute; 
-            top: 20px; 
-            left: 20px; 
-            font-size: 24px; 
-            font-weight: bold; 
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
             color: #ffffff; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
-            pointer-events: none; 
-            z-index: 10; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 10;
         }
 
-        #record { 
-            margin-left: 15px; 
-            color: #ff4d4d; 
-            display: none; 
-            background: rgba(0, 0, 0, 0.6); 
-            padding: 2px 12px; 
-            border-radius: 5px; 
+        #record {
+            margin-left: 15px;
+            color: #ff4d4d;
+            display: none;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 12px;
+            border-radius: 5px;
         }
 
-        /* УПРАВЛЕНИЕ МУЗЫКОЙ (ВКЛ / ВЫКЛЧ) 
-        */
-        .music-controls { 
-            position: fixed; 
-            top: 10px; 
-            left: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 5px; 
-            z-index: 1100; 
+        #stop-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #ff0000;
+            color: white;
+            border: 3px solid #fff;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            display: none;
         }
 
-        .music-btn { 
-            background: none; 
-            border: none; 
-            font-family: 'Arial Black', sans-serif; 
-            font-size: 14px; 
-            cursor: pointer; 
-            color: #888; 
-            text-transform: uppercase; 
-            text-align: left; 
-            transition: color 0.2s; 
-        }
-
-        .music-btn.active { 
-            color: #000 !important; 
-        }
-
-        /* КНОПКА ПАУЗЫ И ПОДСКАЗКА 
-        */
-        #stop-container { 
-            position: fixed; 
-            top: 20px; 
-            right: 20px; 
-            display: none; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 5px; 
-            z-index: 100; 
-        }
-
-        #stop-btn { 
-            padding: 10px 20px; 
-            background-color: #ff0000; 
-            color: white; 
-            border: 3px solid #fff; 
-            border-radius: 12px; 
-            font-size: 18px; 
-            font-weight: bold; 
-            cursor: pointer; 
-        }
-
-        .kbd-hint { 
-            color: #888; 
-            font-size: 12px; 
-            font-family: Arial, sans-serif; 
-            font-weight: bold; 
-        }
-
-        /* ЭКРАНЫ МЕНЮ И СМЕРТИ 
-        */
-        #pause-overlay, #death-overlay { 
-            display: none; 
-            position: fixed; 
+        #pause-overlay, #death-overlay {
+            display: none;
+            position: fixed;
             top: 0; 
             left: 0; 
             width: 100%; 
-            height: 100%; 
-            background-color: rgba(0, 0, 0, 0.85); 
-            z-index: 1500; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 1500;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .menu-title { 
             color: white; 
             font-size: 50px; 
             margin-bottom: 30px; 
-            text-align: center; 
+            text-align: center;
             text-shadow: 0 0 10px red; 
         }
 
@@ -134,7 +85,7 @@
             display: flex; 
             gap: 20px; 
         }
-
+        
         .rect-btn { 
             padding: 20px 40px; 
             font-size: 22px; 
@@ -142,451 +93,356 @@
             cursor: pointer; 
             font-weight: bold; 
             text-transform: uppercase; 
-            color: white; 
+            color: white;
         }
 
         .btn-red { background-color: #ff0000; }
         .btn-green { background-color: #2ecc71; }
 
-        /* ГЛАВНОЕ ЛОББИ 
-        */
-        #lobby { 
-            position: fixed; 
+        #lobby {
+            position: fixed;
             top: 0; 
             left: 0; 
             width: 100%; 
-            height: 100%; 
-            background-color: #0099ff; 
+            height: 100%;
+            background-color: #0099ff;
             background-image: 
                 linear-gradient(45deg, #ffffff 25%, transparent 25%), 
                 linear-gradient(-45deg, #ffffff 25%, transparent 25%), 
                 linear-gradient(45deg, transparent 75%, #ffffff 75%), 
-                linear-gradient(-45deg, transparent 75%, #ffffff 75%); 
-            background-size: 80px 80px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: flex-start; 
-            align-items: center; 
-            z-index: 1000; 
-            padding-top: 10vh; 
+                linear-gradient(-45deg, transparent 75%, #ffffff 75%);
+            background-size: 80px 80px;
+            background-position: 0 0, 0 40px, 40px -40px, -40px 0px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            z-index: 1000;
+            padding-top: 10vh;
         }
 
-        #gameTitle { 
-            font-size: clamp(40px, 12vw, 80px); 
-            color: #ff0000; 
-            text-shadow: 5px 5px 0px black; 
-            margin: 0 0 50px 0; 
-            text-align: center; 
-            text-transform: uppercase; 
+        #gameTitle {
+            font-size: clamp(40px, 12vw, 80px);
+            color: white;
+            text-shadow: 5px 5px 0px black;
+            margin: 0 0 50px 0;
+            text-align: center;
+            text-transform: uppercase;
         }
 
-        #startButton { 
-            background-color: white; 
-            border: 5px solid black; 
-            border-radius: 25px; 
-            padding: 20px 50px; 
-            font-size: clamp(24px, 8vw, 40px); 
-            font-weight: bold; 
-            color: black; 
-            cursor: pointer; 
-            box-shadow: 0 10px 0px rgba(0,0,0,0.2); 
+        #startButton {
+            background-color: white;
+            border: 5px solid black;
+            border-radius: 25px;
+            padding: 20px 50px;
+            font-size: clamp(24px, 8vw, 40px);
+            font-weight: bold;
+            color: black;
+            cursor: pointer;
+            box-shadow: 0 10px 0px rgba(0,0,0,0.2);
         }
 
-        /* ЭФФЕКТЫ ПЕРЕХОДА 
-        */
-        #fadeOverlay { 
-            position: fixed; 
+        #fadeOverlay {
+            position: fixed;
             top: 0; 
             left: 0; 
             width: 100%; 
-            height: 100%; 
+            height: 100%;
             background-color: black; 
-            opacity: 0; 
+            opacity: 0;
             visibility: hidden; 
-            z-index: 2000; 
-            transition: opacity 2s ease-in-out; 
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #fadeOverlay.active { 
             visibility: visible; 
             opacity: 1; 
         }
+
+        #fadeOverlay.smooth { 
+            transition: opacity 2s ease-in-out; 
+        }
+
+        #fadeOverlay.instant { 
+            transition: none !important; 
+        }
     </style>
 </head>
 <body>
 
-    <div id="lobby">
-        <div class="music-controls">
-            <button id="mOn" class="music-btn" onclick="toggleMusic(true)">ВКЛ музыку</button>
-            <button id="mOff" class="music-btn active" onclick="toggleMusic(false)">ВЫКЛЧ музыку</button>
-        </div>
-        <h1 id="gameTitle">MACHINE MADNESS</h1>
-        <button id="startButton">ПОЕХАЛИ</button>
+<div id="lobby">
+    <h1 id="gameTitle">MACHINE MADNESS</h1>
+    <button id="startButton">ПОЕХАЛИ</button>
+</div>
+
+<button id="stop-btn" onclick="pauseGame()">СТОП</button>
+
+<div id="pause-overlay">
+    <h1 class="menu-title">ПАУЗА</h1>
+    <div class="btn-container">
+        <button class="rect-btn btn-red" onclick="location.reload()">ВЫЙТИ</button>
+        <button class="rect-btn btn-green" onclick="resumeGame()">ИГРАТЬ</button>
     </div>
+</div>
 
-    <div id="stop-container">
-        <button id="stop-btn" onclick="pauseGame()">СТОП</button>
-        <div class="kbd-hint">(ПРОБЕЛ)</div>
+<div id="death-overlay">
+    <h1 id="death-phrase" class="menu-title">...</h1>
+    <div class="btn-container">
+        <button class="rect-btn btn-red" onclick="giveUp()">СДАТЬСЯ</button>
+        <button class="rect-btn btn-green" onclick="retryGame()">ИГРАТЬ</button>
     </div>
+</div>
 
-    <div id="pause-overlay">
-        <h1 class="menu-title">ПАУЗА</h1>
-        <div class="btn-container">
-            <button class="rect-btn btn-red" onclick="location.reload()">ВЫЙТИ</button>
-            <button class="rect-btn btn-green" onclick="resumeGame()">ИГРАТЬ</button>
-        </div>
-    </div>
+<div id="fadeOverlay" class="smooth"></div>
 
-    <div id="death-overlay">
-        <h1 id="death-phrase" class="menu-title">...</h1>
-        <div class="btn-container">
-            <button class="rect-btn btn-red" onclick="giveUp()">СДАТЬСЯ</button>
-            <button class="rect-btn btn-green" onclick="retryGame()">ИГРАТЬ</button>
-        </div>
-    </div>
+<div id="ui">
+    Score: <span id="scoreVal">0</span>
+    <span id="record">Record: <span id="recordVal">0</span></span>
+</div>
 
-    <div id="fadeOverlay"></div>
-    
-    <div id="ui">
-        Score: <span id="scoreVal">0</span> 
-        <span id="record">Record: <span id="recordVal">0</span></span>
-    </div>
+<audio id="menuMusic" loop><source src="mrg1.mp3" type="audio/mpeg"></audio>
+<audio id="gameMusic" loop><source src="finale.mp3" type="audio/mpeg"></audio>
 
-    <audio id="menuMusic" loop><source src="mrg1.mp3" type="audio/mpeg"></audio>
-    <audio id="gameMusic" loop><source src="finale.mp3" type="audio/mpeg"></audio>
+<canvas id="gameCanvas"></canvas>
 
-    <canvas id="gameCanvas"></canvas>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const menuMusic = document.getElementById('menuMusic');
+    const gameMusic = document.getElementById('gameMusic');
+    const lobby = document.getElementById('lobby');
+    const startButton = document.getElementById('startButton');
+    const stopBtn = document.getElementById('stop-btn');
+    const pauseOverlay = document.getElementById('pause-overlay');
+    const deathOverlay = document.getElementById('death-overlay');
+    const fadeOverlay = document.getElementById('fadeOverlay');
+    const scoreElement = document.getElementById('scoreVal');
+    const recordElement = document.getElementById('record');
+    const recordValue = document.getElementById('recordVal');
+    const deathPhraseText = document.getElementById('death-phrase');
 
-    <script>
-        /**
-         * МАШИННОЕ БЕЗУМИЕ - СКРИПТ ИГРЫ
-         * Здесь описана вся логика: от движения до музыки
-         */
+    let score = 0;
+    let highScore = 0;
+    let gameActive = false;
+    let isPaused = false;
+    let gameSpeedMultiplier = 1;
+    let lastMoveTime = Date.now();
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const menuMusic = document.getElementById('menuMusic');
-        const gameMusic = document.getElementById('gameMusic');
-        const lobby = document.getElementById('lobby');
-        const stopContainer = document.getElementById('stop-container');
-        const pauseOverlay = document.getElementById('pause-overlay');
-        const deathOverlay = document.getElementById('death-overlay');
-        const fadeOverlay = document.getElementById('fadeOverlay');
-        const scoreElement = document.getElementById('scoreVal');
-        const recordElement = document.getElementById('record');
-        const recordValue = document.getElementById('recordVal');
-        const deathPhraseText = document.getElementById('death-phrase');
+    // Исправление: Инициализируем размеры дороги динамически
+    let roadWidth, laneWidth, roadX;
 
-        // ИГРОВЫЕ ПЕРЕМЕННЫЕ
-        let score = 0;
-        let highScore = 0;
-        let gameActive = false;
-        let isPaused = false;
-        let gameSpeedMultiplier = 1;
-        let lastMoveTime = Date.now();
-        let roadWidth, laneWidth, roadX;
-        let musicEnabled = false;
+    const player = {
+        x: 0,
+        y: 0,
+        width: 40, 
+        height: 70, 
+        color: '#3498db'
+    };
 
-        /**
-         * АДАПТИВНОСТЬ
-         * Подстраиваем размер игры под экран
-         */
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            roadWidth = Math.min(canvas.width, 400);
-            laneWidth = roadWidth / 4;
-            roadX = (canvas.width - roadWidth) / 2;
+    let npcCars = [];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        roadWidth = Math.min(canvas.width, 400);
+        laneWidth = roadWidth / 4;
+        roadX = (canvas.width - roadWidth) / 2;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function startMenuMusic() {
+        if (menuMusic.paused && !gameActive && !isPaused) {
+            menuMusic.play().catch(() => {});
         }
+    }
 
-        window.addEventListener('resize', resize);
-        resize();
+    window.addEventListener('mousedown', startMenuMusic);
+    window.addEventListener('touchstart', startMenuMusic);
+    window.addEventListener('keydown', startMenuMusic);
 
-        /**
-         * ЛОГИКА МУЗЫКИ
-         */
-        function toggleMusic(on) {
-            musicEnabled = on;
-            const btnOn = document.getElementById('mOn');
-            const btnOff = document.getElementById('mOff');
-            
-            if (on) {
-                btnOn.classList.add('active');
-                btnOff.classList.remove('active');
-                if (!gameActive) {
-                    menuMusic.play().catch(() => {
-                        console.log("Нужно взаимодействие с экраном");
-                    });
-                }
-            } else {
-                btnOff.classList.add('active');
-                btnOn.classList.remove('active');
-                menuMusic.pause();
-                gameMusic.pause();
-            }
-        }
+    startButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuMusic.pause();
+        menuMusic.currentTime = 0;
+        
+        fadeOverlay.classList.remove('instant');
+        fadeOverlay.classList.add('smooth');
+        fadeOverlay.style.backgroundColor = "black";
+        fadeOverlay.innerHTML = "";
+        fadeOverlay.classList.add('active');
+        fadeOverlay.style.opacity = "1";
 
-        /**
-         * ГОРЯЧИЕ КЛАВИШИ (ПК)
-         */
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                if (gameActive && !isPaused) {
-                    e.preventDefault();
-                    pauseGame();
-                } else if (isPaused) {
-                    e.preventDefault();
-                    resumeGame();
-                }
-            }
-        });
-
-        /**
-         * ЗАПУСК ИГРЫ ИЗ ЛОББИ
-         */
-        document.getElementById('startButton').addEventListener('click', (e) => {
-            e.stopPropagation();
-            menuMusic.pause();
-            menuMusic.currentTime = 0;
-            
-            fadeOverlay.classList.add('active');
-            
-            setTimeout(() => {
-                lobby.style.display = 'none';
-                stopContainer.style.display = 'flex';
-                restartGame();
-                
-                if (musicEnabled) {
-                    gameMusic.play().catch(() => {});
-                }
-                
-                fadeOverlay.classList.remove('active');
-            }, 2000);
-        });
-
-        /**
-         * УПРАВЛЕНИЕ СОСТОЯНИЕМ ИГРЫ
-         */
-        function pauseGame() {
-            if (!gameActive) return;
-            isPaused = true;
-            pauseOverlay.style.display = 'flex';
-            gameMusic.pause();
-            
-            if (musicEnabled) {
-                menuMusic.play().catch(() => {});
-            }
-        }
-
-        function resumeGame() {
-            isPaused = false;
-            pauseOverlay.style.display = 'none';
-            menuMusic.pause();
-            
-            if (musicEnabled) {
-                gameMusic.play().catch(() => {});
-            }
-        }
-
-        function restartGame() {
-            score = 0;
-            gameSpeedMultiplier = 1;
-            lastMoveTime = Date.now();
-            scoreElement.innerText = score;
-            npcCars = [];
-            gameActive = true;
-            isPaused = false;
-            
-            // Сброс позиции игрока
-            player.x = canvas.width / 2 - player.width / 2;
-            player.y = canvas.height - 150;
-            
-            deathOverlay.style.display = 'none';
-            recordElement.style.display = 'none';
-        }
-
-        function retryGame() {
-            menuMusic.pause();
-            menuMusic.currentTime = 0;
+        setTimeout(() => {
+            lobby.style.display = 'none';
+            stopBtn.style.display = 'block';
             restartGame();
-            
-            if (musicEnabled) {
-                gameMusic.play().catch(() => {});
-            }
-            stopContainer.style.display = 'flex';
-        }
+            gameMusic.play();
+            fadeOverlay.classList.remove('active');
+        }, 2000);
+    });
 
-        function giveUp() {
-            deathOverlay.style.display = 'none';
-            fadeOverlay.innerHTML = `<h1 style="color:white; font-size:60px; text-align:center;">НЕ ЗДАВАЙСЯ</h1>`;
-            fadeOverlay.classList.add('active');
-            
-            setTimeout(() => {
-                fadeOverlay.classList.remove('active');
-                fadeOverlay.innerHTML = "";
-                lobby.style.display = 'flex';
-                stopContainer.style.display = 'none';
-                
-                if (musicEnabled) {
-                    menuMusic.play().catch(() => {});
-                }
-            }, 1000);
-        }
+    function pauseGame() {
+        if (!gameActive) return;
+        isPaused = true;
+        pauseOverlay.style.display = 'flex';
+        gameMusic.pause();
+        menuMusic.play();
+    }
 
-        function gameOver() {
-            if (!gameActive) return;
-            gameActive = false;
-            stopContainer.style.display = 'none';
-            gameMusic.pause();
-            gameMusic.currentTime = 0;
-            
-            setTimeout(() => {
-                let phrases = ["Ну ты и попал...", "Опа", "БАБАХ!", "Ну и ну", "Попробуй еще!"];
-                deathPhraseText.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-                
-                if (score > highScore) highScore = score;
-                recordValue.innerText = highScore;
-                recordElement.style.display = 'inline-block';
-                deathOverlay.style.display = 'flex';
-            }, 500);
-        }
+    function resumeGame() {
+        isPaused = false;
+        pauseOverlay.style.display = 'none';
+        menuMusic.pause();
+        gameMusic.play();
+    }
 
-        // ОБЪЕКТ ИГРОКА
-        const player = {
-            x: 0,
-            y: 0,
-            width: 40,
-            height: 70,
-            color: '#3498db'
-        };
+    function restartGame() {
+        score = 0; 
+        gameSpeedMultiplier = 1; 
+        lastMoveTime = Date.now();
+        scoreElement.innerText = score; 
+        npcCars = []; 
+        gameActive = true; 
+        isPaused = false;
 
-        // МАССИВ ВРАЖЕСКИХ МАШИН
-        let npcCars = [];
+        // Исправление: Сброс координат, чтобы не было "бага в небе"
+        player.x = canvas.width / 2 - player.width / 2;
+        player.y = canvas.height - 150;
 
-        /**
-         * УПРАВЛЕНИЕ МАШИНОЙ
-         */
-        function handleMove(inputX, inputY) {
-            if (!gameActive || isPaused) return;
-            
-            let targetX = inputX - player.width / 2;
-            let targetY = inputY - player.height / 2;
-            
-            // Проверка на движение (чтобы не проиграть от бездействия)
-            if (Math.abs(player.x - targetX) > 0.5) {
-                lastMoveTime = Date.now();
-            }
-            
-            // Ограничение по границам дороги
-            if (targetX < roadX) targetX = roadX;
-            if (targetX > roadX + roadWidth - player.width) {
-                targetX = roadX + roadWidth - player.width;
-            }
-            
-            player.x = targetX;
-            player.y = targetY;
-        }
+        deathOverlay.style.display = 'none';
+        recordElement.style.display = 'none';
+    }
 
-        window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-        canvas.addEventListener('touchmove', (e) => {
-            handleMove(e.touches[0].clientX, e.touches[0].clientY);
-            e.preventDefault();
-        }, {passive: false});
+    function retryGame() {
+        // Исправление: Останавливаем музыку меню перед началом игры
+        menuMusic.pause();
+        menuMusic.currentTime = 0;
+        restartGame();
+        gameMusic.play();
+        stopBtn.style.display = 'block';
+    }
 
-        /**
-         * СОЗДАНИЕ ВРАГОВ
-         */
-        function spawnNPC() {
-            if (!gameActive || isPaused) return;
-            
-            const lane = Math.floor(Math.random() * 4);
-            const isDown = lane < 2;
-            
-            npcCars.push({
-                x: roadX + lane * laneWidth + (laneWidth - 35) / 2,
-                y: isDown ? -100 : canvas.height + 100,
-                width: 38,
-                height: 75,
-                speed: (Math.random() * 3 + 3) * gameSpeedMultiplier * (isDown ? 1 : -1),
-                color: `hsl(${Math.random() * 360}, 70%, 50%)`
-            });
-        }
-
-        // ТАЙМЕРЫ ИГРЫ
-        setInterval(spawnNPC, 800);
-        setInterval(() => {
-            if (gameActive && !isPaused) {
-                score++;
-                scoreElement.innerText = score;
-                if (score % 10 === 0) gameSpeedMultiplier += 0.1;
-            }
+    function giveUp() {
+        deathOverlay.style.display = 'none';
+        fadeOverlay.classList.remove('smooth');
+        fadeOverlay.classList.add('instant');
+        fadeOverlay.style.backgroundColor = "black";
+        fadeOverlay.innerHTML = `<h1 style="color:white; font-size:60px; text-align:center;">НЕ ЗДАВАЙСЯ</h1>`;
+        fadeOverlay.classList.add('active');
+        fadeOverlay.style.opacity = "1";
+        
+        setTimeout(() => {
+            fadeOverlay.classList.remove('active');
+            fadeOverlay.classList.remove('instant');
+            fadeOverlay.innerHTML = "";
+            lobby.style.display = 'flex';
+            startMenuMusic();
         }, 1000);
+    }
 
-        /**
-         * ГЛАВНЫЙ ЦИКЛ ОТРИСОВКИ
-         */
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function gameOver() {
+        if (!gameActive) return;
+        gameActive = false;
+        stopBtn.style.display = 'none';
+        gameMusic.pause();
+        gameMusic.currentTime = 0;
+
+        setTimeout(() => {
+            let phrases = ["Ну ты и попал...", "Опа", "ЕЩЕ БЫСТРЕЕ!!!", "Ну и ну", "ААААА", "Попробуй еще!"];
+            deathPhraseText.innerText = phrases[Math.floor(Math.random() * phrases.length)];
             
-            // Рисуем асфальт
-            ctx.fillStyle = score >= 100 ? '#4a0000' : '#333';
-            ctx.fillRect(roadX, 0, roadWidth, canvas.height);
+            if (score > highScore) highScore = score;
+            recordValue.innerText = highScore;
+            recordElement.style.display = 'inline-block';
             
-            // Разметка дороги
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.setLineDash([20, 20]);
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(roadX + roadWidth / 2, 0);
-            ctx.lineTo(roadX + roadWidth / 2, canvas.height);
-            ctx.stroke();
-            
-            if (gameActive && !isPaused) {
-                // Всегда держим дорогу по центру
-                resize();
-                
-                // Проверка на AFK (3 секунды без движения)
-                if (Date.now() - lastMoveTime > 3000) gameOver();
-                
-                // Двигаем и проверяем врагов
-                npcCars.forEach((car, i) => {
-                    car.y += car.speed;
-                    
-                    // Коллизия
-                    if (player.x < car.x + car.width && 
-                        player.x + player.width > car.x && 
-                        player.y < car.y + car.height && 
-                        player.y + player.height > car.y) {
-                        gameOver();
-                    }
-                    
-                    // Удаление за границами
-                    if (car.y > canvas.height + 200 || car.y < -200) {
-                        npcCars.splice(i, 1);
-                    }
-                });
-            }
-            
-            // Рисуем игрока
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            
-            // Рисуем врагов
-            npcCars.forEach(car => {
-                ctx.fillStyle = car.color;
-                ctx.fillRect(car.x, car.y, car.width, car.height);
-            });
-            
-            requestAnimationFrame(draw);
+            deathOverlay.style.display = 'flex';
+        }, 500);
+    }
+
+    function handleMove(inputX, inputY) {
+        if (!gameActive || isPaused) return;
+        let targetX = inputX - player.width / 2;
+        let targetY = inputY - player.height / 2;
+        if (Math.abs(player.x - targetX) > 0.5) lastMoveTime = Date.now();
+        if (targetX < roadX) targetX = roadX;
+        if (targetX > roadX + roadWidth - player.width) targetX = roadX + roadWidth - player.width;
+        player.x = targetX;
+        player.y = targetY;
+    }
+
+    window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+    canvas.addEventListener('touchmove', (e) => {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault();
+    }, {passive: false});
+
+    function spawnNPC() {
+        if (!gameActive || isPaused) return;
+        const lane = Math.floor(Math.random() * 4);
+        const isComingDown = lane < 2; 
+        const baseSpeed = (Math.random() * 3 + 3) * gameSpeedMultiplier;
+        npcCars.push({
+            x: roadX + lane * laneWidth + (laneWidth - 35) / 2,
+            y: isComingDown ? -100 : canvas.height + 100,
+            width: 38, height: 75, speed: isComingDown ? baseSpeed : -baseSpeed,
+            color: `hsl(${Math.random() * 360}, 70%, 50%)`
+        });
+    }
+
+    setInterval(spawnNPC, 800);
+    
+    setInterval(() => {
+        if (gameActive && !isPaused) {
+            score++;
+            scoreElement.innerText = score;
+            if (score % 10 === 0) gameSpeedMultiplier += 0.1;
         }
+    }, 1000);
 
-        // ЗАПУСК ЦИКЛА
-        draw();
+    function update() {
+        if (!gameActive || isPaused) return;
+        if (Date.now() - lastMoveTime > 3000) gameOver();
+        npcCars.forEach((car, index) => {
+            car.y += car.speed;
+            if (player.x < car.x + car.width && player.x + player.width > car.x &&
+                player.y < car.y + car.height && player.y + player.height > car.y) {
+                gameOver();
+            }
+            if (car.y > canvas.height + 200 || car.y < -200) npcCars.splice(index, 1);
+        });
+    }
 
-        /**
-         * КОНЕЦ КОДА
-         * Если ты видишь это сообщение, значит файл готов к работе!
-         */
-    </script>
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = score >= 100 ? '#4a0000' : '#333';
+        ctx.fillRect(roadX, 0, roadWidth, canvas.height);
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.setLineDash([20, 20]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(roadX + roadWidth / 2, 0);
+        ctx.lineTo(roadX + roadWidth / 2, canvas.height);
+        ctx.stroke();
+
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+
+        npcCars.forEach(car => {
+            ctx.fillStyle = car.color;
+            ctx.fillRect(car.x, car.y, car.width, car.height);
+        });
+
+        update();
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+</script>
 </body>
 </html>
