@@ -40,12 +40,47 @@
             border-radius: 5px;
         }
 
+        /* Кнопка СТОП */
+        #stop-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #ff0000;
+            color: white;
+            border: 3px solid #fff;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            display: none; /* Появится при старте */
+        }
+
+        /* Экран паузы */
+        #pause-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 1500;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pause-title { color: white; font-size: 50px; margin-bottom: 30px; text-shadow: 0 0 10px red; }
+        .pause-btns { display: flex; gap: 20px; }
+        .menu-btn { 
+            padding: 15px 30px; font-size: 20px; border-radius: 15px; border: none; 
+            cursor: pointer; font-weight: bold; text-transform: uppercase;
+        }
+        #res-btn { background-color: #2ecc71; color: white; }
+        #exit-btn { background-color: #e74c3c; color: white; }
+
         #lobby {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background-color: #0099ff;
             background-image: 
                 linear-gradient(45deg, #ffffff 25%, transparent 25%), 
@@ -80,29 +115,17 @@
             font-weight: bold;
             color: black;
             cursor: pointer;
-            transition: transform 0.1s;
             box-shadow: 0 10px 0px rgba(0,0,0,0.2);
         }
 
-        #startButton:active { transform: scale(0.95); }
-
         #fadeOverlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 2s ease-in-out;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: black; opacity: 0;
+            visibility: hidden; transition: opacity 2s ease-in-out;
             z-index: 2000;
         }
-
-        #fadeOverlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
+        #fadeOverlay.active { visibility: visible; opacity: 1; }
     </style>
 </head>
 <body>
@@ -110,6 +133,16 @@
 <div id="lobby">
     <h1 id="gameTitle">MACHINE MADNESS</h1>
     <button id="startButton">ПОЕХАЛИ</button>
+</div>
+
+<button id="stop-btn" onclick="pauseGame()">СТОП</button>
+
+<div id="pause-overlay">
+    <h1 class="pause-title">ПАУЗА</h1>
+    <div class="pause-btns">
+        <button id="exit-btn" class="menu-btn" onclick="location.reload()">ВЫЙТИ</button>
+        <button id="res-btn" class="menu-btn" onclick="resumeGame()">ИГРАТЬ</button>
+    </div>
 </div>
 
 <div id="fadeOverlay"></div>
@@ -121,12 +154,10 @@
 
 <audio id="menuMusic" loop>
     <source src="mrg1.mp3" type="audio/mpeg">
-    <source src="mrg1.mp3.mp3" type="audio/mpeg">
 </audio>
 
 <audio id="gameMusic" loop>
     <source src="finale.mp3" type="audio/mpeg">
-    <source src="finale.mp3.mp3" type="audio/mpeg">
 </audio>
 
 <canvas id="gameCanvas"></canvas>
@@ -138,6 +169,8 @@
     const gameMusic = document.getElementById('gameMusic');
     const lobby = document.getElementById('lobby');
     const startButton = document.getElementById('startButton');
+    const stopBtn = document.getElementById('stop-btn');
+    const pauseOverlay = document.getElementById('pause-overlay');
     const fadeOverlay = document.getElementById('fadeOverlay');
     const scoreElement = document.getElementById('scoreVal');
     const recordElement = document.getElementById('record');
@@ -153,6 +186,7 @@
     let score = 0;
     let highScore = 0;
     let gameActive = false;
+    let isPaused = false;
     let gameSpeedMultiplier = 1;
     let lastMoveTime = Date.now();
     const roadWidth = Math.min(canvas.width, 400);
@@ -167,19 +201,14 @@
 
     let npcCars = [];
 
-    // Улучшенный запуск музыки для ПК
     function startMenuMusic() {
-        if (menuMusic.paused && !gameActive) {
-            menuMusic.play()
-                .then(() => console.log("Музыка запущена!"))
-                .catch(e => console.log("Ждем взаимодействия..."));
+        if (menuMusic.paused && !gameActive && !isPaused) {
+            menuMusic.play().catch(() => {});
         }
     }
 
-    // Слушаем любые действия пользователя для активации звука
     window.addEventListener('mousedown', startMenuMusic);
     window.addEventListener('touchstart', startMenuMusic);
-    window.addEventListener('keydown', startMenuMusic);
 
     startButton.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -189,14 +218,30 @@
 
         setTimeout(() => {
             lobby.style.display = 'none';
+            stopBtn.style.display = 'block';
             restartGame();
-            gameMusic.play().catch(e => console.log("Ошибка финальной музыки"));
+            gameMusic.play();
             fadeOverlay.classList.remove('active');
         }, 2000);
     });
 
-    function handleMove(inputX, inputY) {
+    function pauseGame() {
         if (!gameActive) return;
+        isPaused = true;
+        pauseOverlay.style.display = 'flex';
+        gameMusic.pause();
+        menuMusic.play(); // Включаем музыку меню на паузе
+    }
+
+    function resumeGame() {
+        isPaused = false;
+        pauseOverlay.style.display = 'none';
+        menuMusic.pause();
+        gameMusic.play();
+    }
+
+    function handleMove(inputX, inputY) {
+        if (!gameActive || isPaused) return;
         let targetX = inputX - player.width / 2;
         let targetY = inputY - player.height / 2;
         if (Math.abs(player.x - targetX) > 0.5) lastMoveTime = Date.now();
@@ -213,7 +258,7 @@
     }, {passive: false});
 
     function spawnNPC() {
-        if (!gameActive) return;
+        if (!gameActive || isPaused) return;
         const lane = Math.floor(Math.random() * 4);
         const isComingDown = lane < 2; 
         const baseSpeed = (Math.random() * 3 + 3) * gameSpeedMultiplier;
@@ -227,7 +272,7 @@
 
     setInterval(spawnNPC, 800);
     setInterval(() => {
-        if (gameActive) {
+        if (gameActive && !isPaused) {
             score++;
             scoreElement.innerText = score;
             if (score % 10 === 0) gameSpeedMultiplier += 0.1;
@@ -236,12 +281,13 @@
 
     function restartGame() {
         score = 0; gameSpeedMultiplier = 1; lastMoveTime = Date.now();
-        scoreElement.innerText = score; npcCars = []; gameActive = true;
+        scoreElement.innerText = score; npcCars = []; gameActive = true; isPaused = false;
         recordElement.style.display = 'none';
     }
 
     function gameOver() {
         gameActive = false;
+        stopBtn.style.display = 'none';
         gameMusic.pause();
         gameMusic.currentTime = 0;
         if (score > highScore) highScore = score;
@@ -249,12 +295,12 @@
         recordElement.style.display = 'inline-block';
         setTimeout(() => { 
             lobby.style.display = 'flex';
-            startMenuMusic(); // Перезапуск музыки меню
+            startMenuMusic();
         }, 1000);
     }
 
     function update() {
-        if (!gameActive) return;
+        if (!gameActive || isPaused) return;
         if (Date.now() - lastMoveTime > 3000) gameOver();
         npcCars.forEach((car, index) => {
             car.y += car.speed;
