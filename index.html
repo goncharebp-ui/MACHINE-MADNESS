@@ -231,13 +231,12 @@
     let gameSpeedMultiplier = 1;
     let lastMoveTime = Date.now();
 
-    const roadWidth = Math.min(canvas.width, 400);
-    const laneWidth = roadWidth / 4;
-    const roadX = (canvas.width - roadWidth) / 2;
+    // Исправление: Инициализируем размеры дороги динамически
+    let roadWidth, laneWidth, roadX;
 
     const player = {
-        x: canvas.width / 2 - 20,
-        y: canvas.height - 150,
+        x: 0,
+        y: 0,
         width: 40, 
         height: 70, 
         color: '#3498db'
@@ -248,6 +247,9 @@
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        roadWidth = Math.min(canvas.width, 400);
+        laneWidth = roadWidth / 4;
+        roadX = (canvas.width - roadWidth) / 2;
     }
 
     window.addEventListener('resize', resize);
@@ -307,11 +309,19 @@
         npcCars = []; 
         gameActive = true; 
         isPaused = false;
+
+        // Исправление: Сброс координат, чтобы не было "бага в небе"
+        player.x = canvas.width / 2 - player.width / 2;
+        player.y = canvas.height - 150;
+
         deathOverlay.style.display = 'none';
         recordElement.style.display = 'none';
     }
 
     function retryGame() {
+        // Исправление: Останавливаем музыку меню перед началом игры
+        menuMusic.pause();
+        menuMusic.currentTime = 0;
         restartGame();
         gameMusic.play();
         stopBtn.style.display = 'block';
@@ -351,7 +361,7 @@
             recordElement.style.display = 'inline-block';
             
             deathOverlay.style.display = 'flex';
-        }, 1000);
+        }, 500);
     }
 
     function handleMove(inputX, inputY) {
