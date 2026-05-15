@@ -17,7 +17,10 @@
             touch-action: none;
             user-select: none;
         }
-        canvas { display: block; }
+
+        canvas { 
+            display: block; 
+        }
         
         #ui {
             position: absolute;
@@ -40,7 +43,6 @@
             border-radius: 5px;
         }
 
-        /* Кнопка СТОП */
         #stop-btn {
             position: fixed;
             top: 20px;
@@ -54,14 +56,16 @@
             font-weight: bold;
             cursor: pointer;
             z-index: 100;
-            display: none; /* Появится при старте */
+            display: none;
         }
 
-        /* Экран паузы */
-        #pause-overlay {
+        #pause-overlay, #death-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
             background-color: rgba(0, 0, 0, 0.85);
             z-index: 1500;
             flex-direction: column;
@@ -69,18 +73,38 @@
             align-items: center;
         }
 
-        .pause-title { color: white; font-size: 50px; margin-bottom: 30px; text-shadow: 0 0 10px red; }
-        .pause-btns { display: flex; gap: 20px; }
-        .menu-btn { 
-            padding: 15px 30px; font-size: 20px; border-radius: 15px; border: none; 
-            cursor: pointer; font-weight: bold; text-transform: uppercase;
+        .menu-title { 
+            color: white; 
+            font-size: 50px; 
+            margin-bottom: 30px; 
+            text-align: center;
+            text-shadow: 0 0 10px red; 
         }
-        #res-btn { background-color: #2ecc71; color: white; }
-        #exit-btn { background-color: #e74c3c; color: white; }
+
+        .btn-container { 
+            display: flex; 
+            gap: 20px; 
+        }
+        
+        .rect-btn { 
+            padding: 20px 40px; 
+            font-size: 22px; 
+            border: 3px solid white; 
+            cursor: pointer; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            color: white;
+        }
+
+        .btn-red { background-color: #ff0000; }
+        .btn-green { background-color: #2ecc71; }
 
         #lobby {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
             background-color: #0099ff;
             background-image: 
                 linear-gradient(45deg, #ffffff 25%, transparent 25%), 
@@ -120,12 +144,31 @@
 
         #fadeOverlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: black; opacity: 0;
-            visibility: hidden; transition: opacity 2s ease-in-out;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background-color: black; 
+            opacity: 0;
+            visibility: hidden; 
             z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        #fadeOverlay.active { visibility: visible; opacity: 1; }
+
+        #fadeOverlay.active { 
+            visibility: visible; 
+            opacity: 1; 
+        }
+
+        #fadeOverlay.smooth { 
+            transition: opacity 2s ease-in-out; 
+        }
+
+        #fadeOverlay.instant { 
+            transition: none !important; 
+        }
     </style>
 </head>
 <body>
@@ -138,27 +181,30 @@
 <button id="stop-btn" onclick="pauseGame()">СТОП</button>
 
 <div id="pause-overlay">
-    <h1 class="pause-title">ПАУЗА</h1>
-    <div class="pause-btns">
-        <button id="exit-btn" class="menu-btn" onclick="location.reload()">ВЫЙТИ</button>
-        <button id="res-btn" class="menu-btn" onclick="resumeGame()">ИГРАТЬ</button>
+    <h1 class="menu-title">ПАУЗА</h1>
+    <div class="btn-container">
+        <button class="rect-btn btn-red" onclick="location.reload()">ВЫЙТИ</button>
+        <button class="rect-btn btn-green" onclick="resumeGame()">ИГРАТЬ</button>
     </div>
 </div>
 
-<div id="fadeOverlay"></div>
+<div id="death-overlay">
+    <h1 id="death-phrase" class="menu-title">...</h1>
+    <div class="btn-container">
+        <button class="rect-btn btn-red" onclick="giveUp()">СДАТЬСЯ</button>
+        <button class="rect-btn btn-green" onclick="retryGame()">ИГРАТЬ</button>
+    </div>
+</div>
+
+<div id="fadeOverlay" class="smooth"></div>
 
 <div id="ui">
     Score: <span id="scoreVal">0</span>
     <span id="record">Record: <span id="recordVal">0</span></span>
 </div>
 
-<audio id="menuMusic" loop>
-    <source src="mrg1.mp3" type="audio/mpeg">
-</audio>
-
-<audio id="gameMusic" loop>
-    <source src="finale.mp3" type="audio/mpeg">
-</audio>
+<audio id="menuMusic" loop><source src="mrg1.mp3" type="audio/mpeg"></audio>
+<audio id="gameMusic" loop><source src="finale.mp3" type="audio/mpeg"></audio>
 
 <canvas id="gameCanvas"></canvas>
 
@@ -171,17 +217,12 @@
     const startButton = document.getElementById('startButton');
     const stopBtn = document.getElementById('stop-btn');
     const pauseOverlay = document.getElementById('pause-overlay');
+    const deathOverlay = document.getElementById('death-overlay');
     const fadeOverlay = document.getElementById('fadeOverlay');
     const scoreElement = document.getElementById('scoreVal');
     const recordElement = document.getElementById('record');
     const recordValue = document.getElementById('recordVal');
-
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
+    const deathPhraseText = document.getElementById('death-phrase');
 
     let score = 0;
     let highScore = 0;
@@ -189,6 +230,7 @@
     let isPaused = false;
     let gameSpeedMultiplier = 1;
     let lastMoveTime = Date.now();
+
     const roadWidth = Math.min(canvas.width, 400);
     const laneWidth = roadWidth / 4;
     const roadX = (canvas.width - roadWidth) / 2;
@@ -196,10 +238,20 @@
     const player = {
         x: canvas.width / 2 - 20,
         y: canvas.height - 150,
-        width: 40, height: 70, color: '#3498db'
+        width: 40, 
+        height: 70, 
+        color: '#3498db'
     };
 
     let npcCars = [];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
 
     function startMenuMusic() {
         if (menuMusic.paused && !gameActive && !isPaused) {
@@ -209,12 +261,19 @@
 
     window.addEventListener('mousedown', startMenuMusic);
     window.addEventListener('touchstart', startMenuMusic);
+    window.addEventListener('keydown', startMenuMusic);
 
     startButton.addEventListener('click', (e) => {
         e.stopPropagation();
         menuMusic.pause();
         menuMusic.currentTime = 0;
+        
+        fadeOverlay.classList.remove('instant');
+        fadeOverlay.classList.add('smooth');
+        fadeOverlay.style.backgroundColor = "black";
+        fadeOverlay.innerHTML = "";
         fadeOverlay.classList.add('active');
+        fadeOverlay.style.opacity = "1";
 
         setTimeout(() => {
             lobby.style.display = 'none';
@@ -230,7 +289,7 @@
         isPaused = true;
         pauseOverlay.style.display = 'flex';
         gameMusic.pause();
-        menuMusic.play(); // Включаем музыку меню на паузе
+        menuMusic.play();
     }
 
     function resumeGame() {
@@ -238,6 +297,61 @@
         pauseOverlay.style.display = 'none';
         menuMusic.pause();
         gameMusic.play();
+    }
+
+    function restartGame() {
+        score = 0; 
+        gameSpeedMultiplier = 1; 
+        lastMoveTime = Date.now();
+        scoreElement.innerText = score; 
+        npcCars = []; 
+        gameActive = true; 
+        isPaused = false;
+        deathOverlay.style.display = 'none';
+        recordElement.style.display = 'none';
+    }
+
+    function retryGame() {
+        restartGame();
+        gameMusic.play();
+        stopBtn.style.display = 'block';
+    }
+
+    function giveUp() {
+        deathOverlay.style.display = 'none';
+        fadeOverlay.classList.remove('smooth');
+        fadeOverlay.classList.add('instant');
+        fadeOverlay.style.backgroundColor = "black";
+        fadeOverlay.innerHTML = `<h1 style="color:white; font-size:60px; text-align:center;">НЕ ЗДАВАЙСЯ</h1>`;
+        fadeOverlay.classList.add('active');
+        fadeOverlay.style.opacity = "1";
+        
+        setTimeout(() => {
+            fadeOverlay.classList.remove('active');
+            fadeOverlay.classList.remove('instant');
+            fadeOverlay.innerHTML = "";
+            lobby.style.display = 'flex';
+            startMenuMusic();
+        }, 1000);
+    }
+
+    function gameOver() {
+        if (!gameActive) return;
+        gameActive = false;
+        stopBtn.style.display = 'none';
+        gameMusic.pause();
+        gameMusic.currentTime = 0;
+
+        setTimeout(() => {
+            let phrases = ["Ну ты и попал...", "Опа", "ЕЩЕ БЫСТРЕЕ!!!", "Ну и ну", "ААААА", "Попробуй еще!"];
+            deathPhraseText.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+            
+            if (score > highScore) highScore = score;
+            recordValue.innerText = highScore;
+            recordElement.style.display = 'inline-block';
+            
+            deathOverlay.style.display = 'flex';
+        }, 1000);
     }
 
     function handleMove(inputX, inputY) {
@@ -271,6 +385,7 @@
     }
 
     setInterval(spawnNPC, 800);
+    
     setInterval(() => {
         if (gameActive && !isPaused) {
             score++;
@@ -278,26 +393,6 @@
             if (score % 10 === 0) gameSpeedMultiplier += 0.1;
         }
     }, 1000);
-
-    function restartGame() {
-        score = 0; gameSpeedMultiplier = 1; lastMoveTime = Date.now();
-        scoreElement.innerText = score; npcCars = []; gameActive = true; isPaused = false;
-        recordElement.style.display = 'none';
-    }
-
-    function gameOver() {
-        gameActive = false;
-        stopBtn.style.display = 'none';
-        gameMusic.pause();
-        gameMusic.currentTime = 0;
-        if (score > highScore) highScore = score;
-        recordValue.innerText = highScore;
-        recordElement.style.display = 'inline-block';
-        setTimeout(() => { 
-            lobby.style.display = 'flex';
-            startMenuMusic();
-        }, 1000);
-    }
 
     function update() {
         if (!gameActive || isPaused) return;
@@ -316,6 +411,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = score >= 100 ? '#4a0000' : '#333';
         ctx.fillRect(roadX, 0, roadWidth, canvas.height);
+        
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.setLineDash([20, 20]);
         ctx.lineWidth = 2;
@@ -323,15 +419,19 @@
         ctx.moveTo(roadX + roadWidth / 2, 0);
         ctx.lineTo(roadX + roadWidth / 2, canvas.height);
         ctx.stroke();
+
         ctx.fillStyle = player.color;
         ctx.fillRect(player.x, player.y, player.width, player.height);
+
         npcCars.forEach(car => {
             ctx.fillStyle = car.color;
             ctx.fillRect(car.x, car.y, car.width, car.height);
         });
+
         update();
         requestAnimationFrame(draw);
     }
+
     draw();
 </script>
 </body>
