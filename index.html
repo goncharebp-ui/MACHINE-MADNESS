@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MACHINE MADNESS</title>
+    <style>
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            font-family: 'Arial Black', sans-serif;
+            touch-action: none;
+            user-select: none;
+        }
+        canvas { display: block; }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffffff; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #record {
+            margin-left: 15px;
+            color: #ff4d4d;
+            display: none;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 12px;
+            border-radius: 5px;
+        }
+
+        #lobby {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0099ff;
+            background-image: 
+                linear-gradient(45deg, #ffffff 25%, transparent 25%), 
+                linear-gradient(-45deg, #ffffff 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #ffffff 75%), 
+                linear-gradient(-45deg, transparent 75%, #ffffff 75%);
+            background-size: 80px 80px;
+            background-position: 0 0, 0 40px, 40px -40px, -40px 0px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            z-index: 1000;
+            padding-top: 10vh;
+        }
+
+        #gameTitle {
+            font-size: clamp(40px, 12vw, 80px);
+            color: white;
+            text-shadow: 5px 5px 0px black;
+            margin: 0 0 50px 0;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        #startButton {
+            background-color: white;
+            border: 5px solid black;
+            border-radius: 25px;
+            padding: 20px 50px;
+            font-size: clamp(24px, 8vw, 40px);
+            font-weight: bold;
+            color: black;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 10px 0px rgba(0,0,0,0.2);
+        }
+
+        #startButton:active { transform: scale(0.95); }
+
+        #fadeOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 2s ease-in-out;
+            z-index: 2000;
+        }
+
+        #fadeOverlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div id="lobby">
+    <h1 id="gameTitle">MACHINE MADNESS</h1>
+    <button id="startButton">ПОЕХАЛИ</button>
+</div>
+
+<div id="fadeOverlay"></div>
+
+<div id="ui">
+    Score: <span id="scoreVal">0</span>
+    <span id="record">Record: <span id="recordVal">0</span></span>
+</div>
+
+<audio id="menuMusic" loop>
+    <source src="mrg1.mp3" type="audio/mpeg">
+    <source src="mrg1.mp3.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="gameMusic" loop>
+    <source src="finale.mp3" type="audio/mpeg">
+    <source src="finale.mp3.mp3" type="audio/mpeg">
+</audio>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const menuMusic = document.getElementById('menuMusic');
+    const gameMusic = document.getElementById('gameMusic');
+    const lobby = document.getElementById('lobby');
+    const startButton = document.getElementById('startButton');
+    const fadeOverlay = document.getElementById('fadeOverlay');
+    const scoreElement = document.getElementById('scoreVal');
+    const recordElement = document.getElementById('record');
+    const recordValue = document.getElementById('recordVal');
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let score = 0;
+    let highScore = 0;
+    let gameActive = false;
+    let gameSpeedMultiplier = 1;
+    let lastMoveTime = Date.now();
+    const roadWidth = Math.min(canvas.width, 400);
+    const laneWidth = roadWidth / 4;
+    const roadX = (canvas.width - roadWidth) / 2;
+
+    const player = {
+        x: canvas.width / 2 - 20,
+        y: canvas.height - 150,
+        width: 40, height: 70, color: '#3498db'
+    };
+
+    let npcCars = [];
+
+    // Улучшенный запуск музыки для ПК
+    function startMenuMusic() {
+        if (menuMusic.paused && !gameActive) {
+            menuMusic.play()
+                .then(() => console.log("Музыка запущена!"))
+                .catch(e => console.log("Ждем взаимодействия..."));
+        }
+    }
+
+    // Слушаем любые действия пользователя для активации звука
+    window.addEventListener('mousedown', startMenuMusic);
+    window.addEventListener('touchstart', startMenuMusic);
+    window.addEventListener('keydown', startMenuMusic);
+
+    startButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuMusic.pause();
+        menuMusic.currentTime = 0;
+        fadeOverlay.classList.add('active');
+
+        setTimeout(() => {
+            lobby.style.display = 'none';
+            restartGame();
+            gameMusic.play().catch(e => console.log("Ошибка финальной музыки"));
+            fadeOverlay.classList.remove('active');
+        }, 2000);
+    });
+
+    function handleMove(inputX, inputY) {
+        if (!gameActive) return;
+        let targetX = inputX - player.width / 2;
+        let targetY = inputY - player.height / 2;
+        if (Math.abs(player.x - targetX) > 0.5) lastMoveTime = Date.now();
+        if (targetX < roadX) targetX = roadX;
+        if (targetX > roadX + roadWidth - player.width) targetX = roadX + roadWidth - player.width;
+        player.x = targetX;
+        player.y = targetY;
+    }
+
+    window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+    canvas.addEventListener('touchmove', (e) => {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault();
+    }, {passive: false});
+
+    function spawnNPC() {
+        if (!gameActive) return;
+        const lane = Math.floor(Math.random() * 4);
+        const isComingDown = lane < 2; 
+        const baseSpeed = (Math.random() * 3 + 3) * gameSpeedMultiplier;
+        npcCars.push({
+            x: roadX + lane * laneWidth + (laneWidth - 35) / 2,
+            y: isComingDown ? -100 : canvas.height + 100,
+            width: 38, height: 75, speed: isComingDown ? baseSpeed : -baseSpeed,
+            color: `hsl(${Math.random() * 360}, 70%, 50%)`
+        });
+    }
+
+    setInterval(spawnNPC, 800);
+    setInterval(() => {
+        if (gameActive) {
+            score++;
+            scoreElement.innerText = score;
+            if (score % 10 === 0) gameSpeedMultiplier += 0.1;
+        }
+    }, 1000);
+
+    function restartGame() {
+        score = 0; gameSpeedMultiplier = 1; lastMoveTime = Date.now();
+        scoreElement.innerText = score; npcCars = []; gameActive = true;
+        recordElement.style.display = 'none';
+    }
+
+    function gameOver() {
+        gameActive = false;
+        gameMusic.pause();
+        gameMusic.currentTime = 0;
+        if (score > highScore) highScore = score;
+        recordValue.innerText = highScore;
+        recordElement.style.display = 'inline-block';
+        setTimeout(() => { 
+            lobby.style.display = 'flex';
+            startMenuMusic(); // Перезапуск музыки меню
+        }, 1000);
+    }
+
+    function update() {
+        if (!gameActive) return;
+        if (Date.now() - lastMoveTime > 3000) gameOver();
+        npcCars.forEach((car, index) => {
+            car.y += car.speed;
+            if (player.x < car.x + car.width && player.x + player.width > car.x &&
+                player.y < car.y + car.height && player.y + player.height > car.y) {
+                gameOver();
+            }
+            if (car.y > canvas.height + 200 || car.y < -200) npcCars.splice(index, 1);
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = score >= 100 ? '#4a0000' : '#333';
+        ctx.fillRect(roadX, 0, roadWidth, canvas.height);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.setLineDash([20, 20]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(roadX + roadWidth / 2, 0);
+        ctx.lineTo(roadX + roadWidth / 2, canvas.height);
+        ctx.stroke();
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        npcCars.forEach(car => {
+            ctx.fillStyle = car.color;
+            ctx.fillRect(car.x, car.y, car.width, car.height);
+        });
+        update();
+        requestAnimationFrame(draw);
+    }
+    draw();
+</script>
+</body>
+</html>
