@@ -262,6 +262,7 @@
             stopBtn.style.display = 'block';
             restartGame();
             
+            // Начинаем проигрывать трек игры с самого начала
             gameMusic.currentTime = 0;
             gameMusic.play();
             fadeOverlay.classList.remove('active');
@@ -298,7 +299,7 @@
     function retryGame() {
         restartGame();
         
-        // Сбрасываем трек на начало и запускаем
+        // Сбрасываем и запускаем заново при рестарте
         gameMusic.currentTime = 0;
         gameMusic.play();
         
@@ -308,7 +309,7 @@
     function giveUp() {
         deathOverlay.style.display = 'none';
         
-        // Мгновенный черный экран с надписью
+        // Мгновенный черный экран
         fadeOverlay.classList.remove('smooth');
         fadeOverlay.classList.add('instant');
         fadeOverlay.innerHTML = `<h1 style="color:white; font-size:50px; text-align:center;">НЕ ЗДАВАЙСЯ</h1>`;
@@ -319,7 +320,7 @@
             fadeOverlay.innerHTML = "";
             lobby.style.display = 'flex';
             
-            // Включаем музыку меню только после того, как вернулись в лобби
+            // Включаем музыку меню только после возвращения в главное лобби
             startMenuMusic();
         }, 1000);
     }
@@ -369,7 +370,7 @@
         gameActive = false;
         stopBtn.style.display = 'none';
         
-        // Глушим игровую музыку, музыку меню НЕ включаем (на экране смерти тишина)
+        // Полностью глушим и сбрасываем музыку игры, музыка меню НЕ включается
         gameMusic.pause();
         gameMusic.currentTime = 0;
 
